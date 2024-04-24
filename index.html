@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      text-decoration: none;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Slide Manager</h1>
+    <div id="buttonContainer">
+      <!-- JavaScriptでボタンを追加 -->
+    </div>
+  </div>
+
+  <script>
+var fileList = [
+  "wave"
+];
+
+// ボタンを作成し、イベントリスナーを追加する関数
+function createButtons() {
+  var buttonContainer = document.getElementById("buttonContainer");
+
+  for (var i = 0; i < fileList.length; i++) {
+    var button = document.createElement("button");
+    button.textContent = fileList[i];
+    button.classList.add("button");
+    button.onclick = function() {
+      window.location.href = fileList[i-1]+".html";
+      //window.location.href = "page"+i+".html";
+    };
+    buttonContainer.appendChild(button);
+  }
+}
+
+// ページが読み込まれたときにボタンを作成する
+window.onload = function() {
+  createButtons();
+};
+  </script>
+</body>
+</html>
