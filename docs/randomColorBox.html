@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editable Grid Canvas</title>
+<style>
+    canvas {
+        border: 1px solid black;
+    }
+    #inputWindow {
+        display: none;
+        position: absolute;
+        top: 100px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #f0f0f0;
+        padding: 20px;
+        border: 1px solid #ccc;
+    }
+</style>
+</head>
+<body>
+<canvas id="gridCanvas" width="400" height="400"></canvas>
+
+<div id="inputWindow">
+    <label for="colorPicker">Color:</label>
+    <input type="color" id="colorPicker"><br>
+    <label for="shapeSelect">Shape:</label>
+    <select id="shapeSelect">
+        <option value="circle">Circle</option>
+        <option value="square">Square</option>
+    </select><br>
+    <label for="numberInput">Number:</label>
+    <input type="number" id="numberInput" min="1" max="10"><br>
+    <button id="applyButton">Apply</button>
+</div>
+
+<script>
+    var canvas = document.getElementById('gridCanvas');
+    var ctx = canvas.getContext('2d');
+
+    //パラメータ
+    var gridSize = 10;
+var click_dx = 0;
+var click_dy = 75;
+
+//準備
+    var gridState = [];
+
+    // グリッドの初期化
+    function initializeGrid() {
+        var cellSize = canvas.width / gridSize;
+        for (var i = 0; i < gridSize; i++) {
+            gridState[i] = [];
+            for (var j = 0; j < gridSize; j++) {
+                gridState[i][j] = {
+                    color: getRandomColor(),
+                    shape: getRandomShape(),
+                    number: getRandomNumber()
+                };
+                drawCell(i, j, cellSize);
+            }
+        }
+    }
+
+    // グリッドの改変
+    function applyChanges(row, col) {
+        var cellSize = canvas.width / gridSize;
+        for (var i = 0; i < gridSize; i++) {
+            for (var j = 0; j < gridSize; j++) {
+                drawCell(i, j, cellSize);
+            }
+        }
+    }
+
+    // ランダムな色を生成する関数
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // ランダムな図形を生成する関数
+    function getRandomShape() {
+        var shapes = ['circle', 'square'];
+        return shapes[Math.floor(Math.random() * shapes.length)];
+    }
+
+    // ランダムな数字を生成する関数
+    function getRandomNumber() {
+        return Math.floor(Math.random() * 10) + 1;
+    }
+
+    // セルを描画する関数
+    function drawCell(row, col, size) {
+        var cell = gridState[row][col];
+        ctx.fillStyle = cell.color;
+        ctx.fillRect(col * size, row * size, size, size);
+
+        // 図形の描画
+        if (cell.shape === 'circle') {
+            ctx.beginPath();
+            ctx.arc((col + 0.5) * size, (row + 0.5) * size, size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        } else if (cell.shape === 'square') {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(col * size + size / 4, row * size + size / 4, size / 2, size / 2);
+        }
+
+        // 数字の描画
+        ctx.fillStyle = 'black';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cell.number, (col + 0.5) * size, (row + 0.5) * size);
+    }
+
+    // グリッドの初期化
+    initializeGrid();
+
+    // クリックしたセルの状態を編集するイベントリスナーの追加
+    canvas.addEventListener('click', function(event) {
+    var clickX = event.pageX;
+    var clickY = event.pageY;
+        var cellSize = canvas.width / gridSize;
+        var row = Math.floor(event.offsetY / cellSize);
+        var col = Math.floor(event.offsetX / cellSize);
+        
+        // 入力ウィンドウを表示し、入力値を格子に反映する
+        showInputWindow(row, col, clickX, clickY);
+    });
+
+    // 入力ウィンドウを表示する関数
+    function showInputWindow(row, col, clickX, clickY) {
+        var inputWindow = document.getElementById('inputWindow');
+        inputWindow.style.display = 'block';
+    inputWindow.style.top = clickY - click_dy + 'px';
+    inputWindow.style.left = clickX + 'px';
+
+        var cell = gridState[row][col];
+        document.getElementById('colorPicker').value = cell.color;
+        document.getElementById('shapeSelect').value = cell.shape;
+        document.getElementById('numberInput').value = cell.number;
+
+        // Applyボタンをクリックした時の処理
+        document.getElementById('applyButton').onclick = function() {
+          cell.color=document.getElementById('colorPicker').value;
+          cell.shape=document.getElementById('shapeSelect').value;
+          cell.number=document.getElementById('numberInput').value;
+            applyChanges(row, col);
+            inputWindow.style.display = 'none';
+      }
+    }
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>光学シミュレーション</title>
+  <style>
+    #canvas {
+        border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <script>
+//canvas for photons
+const canvas = document.getElementById('gameCanvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+//canvas for backgraound
+const backgroundCanvas = document.getElementById('backgroundCanvas');
+document.body.appendChild(backcanvas);
+const backctx = backgroundCanvas.getContext('2d');
+
+/* 流れ
+//パラメータ：光速、分割数、時間、視点[x,y,z,theta1,theta2]
+//データ：光子[x,y,z,kx,ky,kz,omega,phi1,phi2]、器具[種類,x,y,z,theta1,theta2,theta3]
+
+//基礎func：進行、生成、ベクトル
+
+//当たり判定
+
+//応用func：半透鏡、回折格子、光子生成器、光子検出器、非線形光学結晶
+
+//loop内容：
+進行→当たり判定(生成、ベクトル操作、検出＆消滅)
+→非線形光学結晶内部当たり判定（光子同士が十分に近ければ、作用）
+
+//レンダリング、変換→webGLとかを使うか？
+//描画func：各光学素子描画、光子描画
+
+//全体
+//入力→読み取り（仮描像）
+//演算、データ保存
+//レンダリング→再生＋保存
+*/
+
+camera = { //視点
+  x:0,
+  y:0,
+  z:0,
+  theta1:0,
+  theta2:0
+}
+speed_of_light = 3*10^8; //　光子の速度：m/s→px/frame
+rate = 10^-15; //　１フレーム当たりの時間　s/frame
+scale = 10^-6; // m/px ピクセルあたりの長さ:μm
+c = speed_of_light*rate/scale; // 1フレームあたり進むpx数
+t = 0; // 時間/fs = frame
+
+// initial
+photon_initial = {
+  x:0,
+  y:0,
+  z:0,
+  theta1:0,
+  theta2:0,
+  omega:0,
+  phi1:0,
+  phi2:0
+}
+tool = {
+  x:0,
+  y:0,
+  z:0,
+  theta1:0,
+  theta2:0,
+  theta3:0,
+  type:0
+}
+
+// tools parameter
+lenz = { //　type0
+  r:50,
+  f:0
+}
+mirror = { //1
+  r:50,
+  p:0
+}
+laser = { //2
+  center_freq:750, //nm
+  FWHM:750, // gauss→ esp(-x^2/(2*σ^2))、FWHM=2σ√2ln2
+  pulse_width:100, //fs = frame
+  power:1000 // 光子数
+}
+detector = { //3
+  r:50
+}
+grating = { //4
+  r:50,
+  blaze_angle:26.44
+}
+crystal = { //5
+  r:50,
+  l:50
+}
+
+let photons = [];
+let tools = [];
+
+//基礎func
+function generation(){ //生成
+  photons.push({
+    x:0,
+    y:0,
+    z:0,
+    theta1:0,
+    theta2:0,
+    omega:0,
+    phi1:0,
+    phi2:0
+  });
+}
+
+//当たり判定func 光子の進行、生成、方向転換、
+function collision_detection(){
+  photons.forEach((photon, photonIndex) => {
+    //画面外で消える
+    if(photon.x<=0 || photon.y<=0 || photon.z<=0){
+      enemys.splice(enemyIndex, 1);
+    }
+    else{
+      //進行
+      photon.x += c*Math.cos(photon.theta1*Math.PI/180)*Math.sin(photon.theta2*Math.PI/180);
+      photon.y += c*Math.sin(photon.theta1*Math.PI/180)*Math.sin(photon.theta2*Math.PI/180);
+      photon.z += c*Math.cos(photon.theta2*Math.PI/180);
+      //光学素子
+      tools.forEach((tool, toolIndex) => {
+        if(tool.type==2){ //レーザー
+          sigma = laser.FWHM/2.35;
+          if(t<=4*sigma){ //※発信時間が制限されている
+            Amp = 1/sigma/Math.sqrt(2*Math.PI)*Math.exp(-((t-laser.pulse_width)/sigma)^2/2)
+            Math.random()
+            for (var i = 0; i < 3; i++) {
+              photon_initial.x = Math.random()
+              generation()
+            }
+          }
+        }
+        r = (photon.x-tool.x)^2+(photon.y-tool.y)^2+(photon.z-tool.z)^2
+        if(r<=10000){
+          d=Math.cos(tool.theta1*Math.PI/180)*Math.sin(tool.theta2*Math.PI/180)*(photon.x-tool.x) + Math.sin(tool.theta1*Math.PI/180)*Math.sin(tool.theta2*Math.PI/180)*(photon.y-tool.y) + Math.cos(tool.theta2*Math.PI/180)*(photon.z-tool.z) 
+          if(d<=0){
+            if(tool.type==0){ //レンズ
+            }
+            else if(tool.type==1){ //鏡
+              
+            }
+            else if(tool.type==3){ //検出器
+              
+            }
+            else if(tool.type==4){ // 回折格子
+              
+            }
+            else if(tool.type==5){ // 非線形光学結晶
+              
+            }
+          }
+        }
+      });
+    }
+  });
+
+  //パラメータ調整
+  t++;//時間経過  
+}
+
+//メイン演算=========================
+function loop(){
+  //当たり判定
+  //非線形光学結晶
+  //時間とかパラメータの調整
+}
+
+
+
+
+  </script>
+</body>
+</html>

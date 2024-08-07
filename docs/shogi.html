@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>将棋ゲーム</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .board { display: grid; grid-template-columns: repeat(9, 40px); gap: 1px; }
+    .cell { width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border: 1px solid #000; }
+    .cell.selected { background-color: #f0f0f0; }
+    .cell.highlight { background-color: #d0ffd0; }
+    .piece {width: 100%; height: 100%;}
+    #turn { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div id="turn">Player 1's Turn</div>
+  <div class="board" id="board"></div>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const boardElement = document.getElementById('board');
+  const turnElement = document.getElementById('turn');
+
+  const boardSize = 9;
+  const directions = {
+    'P': [[-1, 0]],
+    'L': [[-1, 0]],
+    'N': [[-2, -1], [-2, 1]],
+    'S': [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]],
+    'G': [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]],
+    'K': [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]],
+    'R': [[-1, 0], [1, 0], [0, -1], [0, 1]],
+    'B': [[-1, -1], [-1, 1], [1, -1], [1, 1]],
+    'p': [[1, 0]],
+    'l': [[1, 0]],
+    'n': [[2, -1], [2, 1]],
+    's': [[1, -1], [1, 0], [1, 1], [-1, -1], [-1, 1]],
+    'g': [[1, -1], [1, 0], [1, 1], [0, -1], [0, 1], [-1, 0]],
+    'k': [[1, -1], [1, 0], [1, 1], [0, -1], [0, 1], [-1, -1], [-1, 0], [-1, 1]],
+    'r': [[1, 0], [-1, 0], [0, 1], [0, -1]],
+    'b': [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+  };
+
+  const pieceImages = {
+    'P': 'images/Pawn.png',
+    'L': 'images/Lance.png',
+    'N': 'images/Knight.png',
+    'S': 'images/Silver.png',
+    'G': 'images/Gold.png',
+    'K': 'images/King.png',
+    'R': 'images/Rook.png',
+    'B': 'images/Bishop.png',
+    'p': 'images/Pawn_opponent.png',
+    'l': 'images/Lance_opponent.png',
+    'n': 'images/Knight_opponent.png',
+    's': 'images/Silver_opponent.png',
+    'g': 'images/Gold_opponent.png',
+    'k': 'images/King_opponent.png',
+    'r': 'images/Rook_opponent.png',
+    'b': 'images/Bishop_opponent.png'
+  };
+
+  let board = [
+    ["l", "n", "s", "g", "k", "g", "s", "n", "l"],
+    ["", "r", "", "", "", "", "", "b", ""],
+    ["p", "p", "p", "p", "p", "p", "p", "p", "p"],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", "", ""],
+    ["P", "P", "P", "P", "P", "P", "P", "P", "P"],
+    ["", "B", "", "", "", "", "", "R", ""],
+    ["L", "N", "S", "G", "K", "G", "S", "N", "L"]
+  ];
+
+  let currentPlayer = 1;
+  let selectedPiece = null;
+  let pieceMovedThisTurn = false;
+
+  function initializeBoard() {
+    for (let i = 0; i < boardSize; i++) {
+      for (let j = 0; j < boardSize; j++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = i;
+        cell.dataset.col = j;
+        cell.addEventListener('click', handleCellClick);
+        cell.addEventListener('mouseover', handleCellMouseOver);
+        cell.addEventListener('mouseout', handleCellMouseOut);
+        boardElement.appendChild(cell);
+      }
+    }
+    renderBoard();
+  }
+
+  function renderBoard() {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+      const row = cell.dataset.row;
+      const col = cell.dataset.col;
+      cell.innerHTML = '';
+
+      if (board[row][col]) {
+        const piece = document.createElement('img');
+        piece.className = 'piece';
+        piece.src = pieceImages[board[row][col]];
+        cell.appendChild(piece);
+      }
+
+      cell.classList.remove('selected', 'highlight');
+    });
+
+    if (selectedPiece) {
+          const selectedCell = document.querySelector(`.cell[data-row="${selectedPiece.row}"][data-col="${selectedPiece.col}"]`);
+          if (selectedCell) {
+              selectedCell.classList.add('selected');
+          }
+      }
+  }
+
+  function handleCellClick(event) {
+    const row = parseInt(event.currentTarget.dataset.row);
+    const col = parseInt(event.currentTarget.dataset.col);
+
+    if (selectedPiece) {
+      if (isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+        movePiece(selectedPiece.row, selectedPiece.col, row, col);
+        selectedPiece = null;
+        pieceMovedThisTurn = true;
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+        turnElement.innerText = `Player ${currentPlayer}'s Turn`;
+        renderBoard();
+      } else {
+        // 選択解除
+        selectedPiece = null;
+        renderBoard();
+      }
+    } else {
+      if (board[row][col] && isPlayerPiece(board[row][col])) {
+        selectedPiece = { row, col };
+        highlightMoves(row, col);
+        renderBoard();
+      }
+    }
+  }
+
+  function handleCellMouseOver(event) {
+      const row = parseInt(event.currentTarget.dataset.row);
+      const col = parseInt(event.currentTarget.dataset.col);
+      if (selectedPiece && isValidMove(selectedPiece.row, selectedPiece.col, row, col)) {
+          event.currentTarget.classList.add('highlight');
+      }
+  }
+
+  function handleCellMouseOut(event) {
+      event.currentTarget.classList.remove('highlight');
+  }
+
+  function isValidMove(fromRow, fromCol, toRow, toCol) {
+    const piece = board[fromRow][fromCol];
+    if (!piece) return false;
+
+    const directionsForPiece = directions[piece];
+    if (!directionsForPiece) return false;
+
+    // 自分の駒を食えないようにする
+    if (board[toRow][toCol] && isPlayerPiece(board[toRow][toCol])) {
+      return false;
+    }
+
+    return directionsForPiece.some(([dr, dc]) => {
+      let r = fromRow + dr;
+      let c = fromCol + dc;
+
+      if(piece == "L" || piece == "l" || piece == "B" || piece == "R" || piece == "b" || piece == "r"){
+        while (r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
+          if (r === toRow && c === toCol) {
+            return true;
+          }
+          if (board[r][c] !== '') {
+            break;
+          }
+          r += dr;
+          c += dc;
+        }
+      }
+      else{
+        if (r === toRow && c === toCol) { return true;}
+      }
+      return false;
+    });
+  }
+
+  function movePiece(fromRow, fromCol, toRow, toCol) {
+    if (board[toRow][toCol] && board[toRow][toCol] !== '') {
+      // 駒を取る場合、相手の駒を削除
+      board[toRow][toCol] = '';
+    }
+    board[toRow][toCol] = board[fromRow][fromCol];
+    board[fromRow][fromCol] = '';
+  }
+
+  function highlightMoves(row, col) {
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+      const r = parseInt(cell.dataset.row);
+      const c = parseInt(cell.dataset.col);
+      if (isValidMove(row, col, r, c)) {
+        cell.classList.add('highlight');
+      }
+    });
+  }
+
+  function isPlayerPiece(piece) {
+    if (currentPlayer === 1) {
+      return piece === piece.toUpperCase(); // Player 1's pieces are uppercase
+    } else {
+      return piece === piece.toLowerCase(); // Player 2's pieces are lowercase
+    }
+  }
+
+  initializeBoard();
+});
+  </script>
+</body>
+</html>

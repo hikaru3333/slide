@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物体の運動シミュレーション</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="simulationCanvas" width="800" height="600"></canvas>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('simulationCanvas');
+  const ctx = canvas.getContext('2d');
+
+  ang = Math.PI/2.5;
+
+  const ball = {
+    x: 10,
+    y: 590,
+    radius: 5,
+    color: 'blue',
+    vx: 7.5*Math.cos(ang),
+    vy: -7.5*Math.sin(ang),
+    ax: 0,
+    ay: 0.05  // acceleration due to gravity
+  };
+
+  function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ball.color;
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  function updateBallPosition() {
+    ball.vy += ball.ay;  // update velocity with acceleration
+    ball.y += ball.vy; 
+    ball.vx += ball.ax;
+    ball.x += ball.vx  // update position with velocity
+
+    // Check for collision with the bottom of the canvas
+    if (ball.y + ball.radius > canvas.height) {
+      ball.y = canvas.height - ball.radius;
+      ball.vy *= -0.8;  // reverse direction and apply damping
+      }
+  }
+
+  function clearCanvas() {
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function animate() {
+    clearCanvas();
+    drawBall();
+    updateBallPosition();
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+});
+
+  </script>
+</body>
+</html>

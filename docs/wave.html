@@ -14,53 +14,109 @@
   canvas {
     display: block;
   }
+  #toggleButton {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #008000;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
+<button id="toggleButton">停止</button>
 <script>
-  // Canvas要素の取得
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+//　録画が可能
+// Canvas要素の取得
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+// Canvas要素からストリームを取得
+const stream = canvas.captureStream(); 
+const mediaRecorder = new MediaRecorder(stream);
+const chunks = [];
 
-  // キャンバスのサイズをウィンドウサイズに合わせる
+
+// キャンバスのサイズをウィンドウサイズに合わせる
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// 波のパラメータ
+const wave = {
+  amplitude: 50, // 振幅
+  frequency: 0.01, // 周波数
+  phase: 0, // 位相
+  speed: 0.1 // 速度
+};
+
+let animationId; // requestAnimationFrame の戻り値
+let isAnimating = true; // アニメーションの状態を示すフラグ
+
+// アニメーションの描画
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  for (let x = 0; x < canvas.width; x += 10) {
+    const y = canvas.height / 2 + Math.sin(x * wave.frequency + wave.phase) * wave.amplitude;
+    ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = 'blue';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 波の位相を更新してアニメーションさせる
+  wave.phase += wave.speed;
+
+  animationId = requestAnimationFrame(draw);
+  
+}
+
+
+
+//　録画＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+mediaRecorder.ondataavailable = function (e) {
+  chunks.push(e.data);
+};
+mediaRecorder.onstop = function (e) {
+  const blob = new Blob(chunks, { 'type' : 'video/mp4' });
+  const videoURL = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = videoURL;
+  a.download = 'canvas_animation.mp4';
+  document.body.appendChild(a);
+  a.click();
+};
+mediaRecorder.start();
+// アニメーションの開始
+draw();
+setTimeout(function () {
+  mediaRecorder.stop();
+}, 5000); // 5秒後に録画停止
+
+
+// ウィンドウサイズが変更された場合にCanvasのサイズも変更する
+window.addEventListener('resize', function() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+});
 
-  // 波のパラメータ
-  const wave = {
-    amplitude: 50, // 振幅
-    frequency: 0.01, // 周波数
-    phase: 0, // 位相
-    speed: 0.1 // 速度
-  };
-
-  // アニメーションの描画
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
-    for (let x = 0; x < canvas.width; x += 10) {
-      const y = canvas.height / 2 + Math.sin(x * wave.frequency + wave.phase) * wave.amplitude;
-      ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = 'blue';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 波の位相を更新してアニメーションさせる
-    wave.phase += wave.speed;
-
-    requestAnimationFrame(draw);
+// トグルボタンのクリックイベント
+const toggleButton = document.getElementById('toggleButton');
+toggleButton.addEventListener('click', function() {
+  if (isAnimating) {
+    toggleButton.textContent = '再開';
+    cancelAnimationFrame(animationId); // アニメーションを停止
+  } else {
+    toggleButton.textContent = '停止';
+    draw(); // アニメーションを再開
   }
+  isAnimating = !isAnimating; // アニメーションの状態をトグルする
+});
 
-  // アニメーションの開始
-  draw();
-
-  // ウィンドウサイズが変更された場合にCanvasのサイズも変更する
-  window.addEventListener('resize', function() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  });
 </script>
 </body>
 </html>
